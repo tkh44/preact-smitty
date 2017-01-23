@@ -41,6 +41,7 @@
     "npm-run-all": "^4.0.1",
     "preact": "^7.1.0",
     "pretty-bytes-cli": "^2.0.0",
+    "rimraf": "^2.5.4",
     "rollup": "^0.41.4",
     "rollup-plugin-buble": "^0.15.0",
     "smitty": "^0.3.1",
@@ -50,11 +51,11 @@
     "undom": "latest"
   },
   "author": "Kye Hohenberger",
-  "homepage": "",
+  "homepage": "https://github.com/tkh44/preact-smitty#readme",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/tkh44/preact-smitty.git"
+    "url": "git+https://github.com/tkh44/preact-smitty.git"
   },
   "keywords": [
     "preact",
@@ -79,5 +80,8 @@
   "dependencies": {
     "mitt": "^1.0.0",
     "npm-run-all": "^4.0.1"
+  },
+  "bugs": {
+    "url": "https://github.com/tkh44/preact-smitty/issues"
   }
 }
