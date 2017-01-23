@@ -14,7 +14,6 @@ export class Provider extends Component {
 
 export function connect (mapStateToProps) {
   function mapState (props, context) {
-    if (typeof mapStateToProps !== 'function') return
     return mapStateToProps(context.store.state, props)
   }
 
@@ -23,18 +22,12 @@ export function connect (mapStateToProps) {
       constructor (props, context) {
         super(props, context)
         this.state = mapState(props, context)
-
-        this.handleStoreUpdate = () => {
-          this.updateTimeout = setTimeout(() => { // setState after all events have been handled
-            this.setState(mapState(this.props, this.context))
-          })
-        }
-
-        context.store.on('*', this.handleStoreUpdate)
+        this.handleStoreUpdate = this.handleStoreUpdate.bind(this)
+        this.context.store.on('*', this.handleStoreUpdate)
       }
 
       componentWillUnmount () {
-        window.clearTimeout(this.updateTimeout)
+        window.cancelAnimationFrame(this.updateAnimId)
         this.context.store.off('*', this.handleStoreUpdate)
       }
 
@@ -48,6 +41,15 @@ export function connect (mapStateToProps) {
             { emit: this.context.store.emit }
           )
         )
+      }
+
+      handleStoreUpdate () {
+        if (typeof mapStateToProps !== 'function') return
+
+        this.updateAnimId = window.requestAnimationFrame(() => { // setState after all events have been handled
+          this.setState(mapState(this.props, this.context))
+          this.updateAnimId = null
+        })
       }
     }
   }
