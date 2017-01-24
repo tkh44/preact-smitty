@@ -1,7 +1,7 @@
 {
   "name": "preact-smitty",
   "amdName": "PreactSmitty",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "description": "Preact bindings for smitty",
   "main": "dist/preact-smitty.js",
   "umd:main": "dist/preact-smitty.min.js",
