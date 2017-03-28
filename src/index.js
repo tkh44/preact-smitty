@@ -23,12 +23,12 @@ export function connect (mapStateToProps) {
         super(props, context)
         this.state = mapState(props, context)
         this.handleStoreUpdate = this.handleStoreUpdate.bind(this)
-        this.context.store.on('*', this.handleStoreUpdate)
+        this.context.store.on('$$store:state:change', this.handleStoreUpdate)
       }
 
       componentWillUnmount () {
         window.cancelAnimationFrame(this.updateAnimId)
-        this.context.store.off('*', this.handleStoreUpdate)
+        this.context.store.off('$$store:state:change', this.handleStoreUpdate)
       }
 
       render (props, state) {
