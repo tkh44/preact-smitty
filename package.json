@@ -1,7 +1,7 @@
 {
   "name": "preact-smitty",
   "amdName": "PreactSmitty",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "Preact bindings for smitty",
   "main": "dist/preact-smitty.js",
   "umd:main": "dist/preact-smitty.min.js",
@@ -22,9 +22,7 @@
     "size": "echo \"Gzipped Size: $(strip-json-comments --no-whitespace $npm_package_main | gzip-size | pretty-bytes)\"",
     "release": "npm run build -s && git commit -am $npm_package_version && git tag $npm_package_version && git push && git push --tags && npm publish"
   },
-  "dependencies": {
-
-  },
+  "dependencies": {},
   "peerDependencies": {
     "preact": "*",
     "smitty": "^2.0.0"
@@ -42,7 +40,6 @@
     "mitt": "^1.0.0",
     "npm-run-all": "^4.0.1",
     "mocha": "^3.1.2",
-    "npm-run-all": "^4.0.1",
     "preact": "^7.1.0",
     "pretty-bytes-cli": "^2.0.0",
     "rimraf": "^2.5.4",
