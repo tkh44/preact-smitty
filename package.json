@@ -1,7 +1,7 @@
 {
   "name": "preact-smitty",
   "amdName": "PreactSmitty",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Preact bindings for smitty",
   "main": "dist/preact-smitty.js",
   "umd:main": "dist/preact-smitty.min.js",
@@ -23,7 +23,8 @@
     "release": "npm run build -s && git commit -am $npm_package_version && git tag $npm_package_version && git push && git push --tags && npm publish"
   },
   "dependencies": {
-    "smitty": "^2.0.0"
+    "mitt": "^1.0.0",
+    "npm-run-all": "^4.0.1"
   },
   "peerDependencies": {
     "preact": "*"
@@ -78,10 +79,6 @@
   },
   "directories": {
     "test": "test"
-  },
-  "dependencies": {
-    "mitt": "^1.0.0",
-    "npm-run-all": "^4.0.1"
   },
   "bugs": {
     "url": "https://github.com/tkh44/preact-smitty/issues"
