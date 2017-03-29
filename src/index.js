@@ -86,7 +86,7 @@ export function connect (mapStateToProps) {
       render (props, state) {
         return h(
           WrappedComponent,
-          Object.assign({}, Object.assign({}, props), state, {
+          Object.assign({}, props, state, {
             emit: this.store.emit,
             actions: this.store.actions
           })
