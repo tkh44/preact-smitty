@@ -1,31 +1,30 @@
 import { Component, h } from 'preact'
 import { createStore } from 'smitty'
 
-function getId (a) {
-  return a
-    ? (a ^ Math.random() * 16 >> a / 4).toString(16)
-    : ([1e7] + -1e3 + -4e3 + -8e3 + -1e11).replace(/[018]/g, getId)
-}
-
 const tree = createStore({
-  instances: []
+  connections: [],
+  trackers: []
 })
 
 tree.createActions({
-  register: 'tree/REGISTER',
-  unregister: 'tree/UNREGISTER',
-  setUserStore: 'tree/SET_USER_STORE',
-  userStoreChange: 'tree/USER_STORE_CHANGE'
+  register: 'preact-smitty/REGISTER',
+  unregister: 'preact-smitty/UNREGISTER',
+  setUserStore: 'preact-smitty/SET_USER_STORE',
+  userStoreChange: 'preact-smitty/USER_STORE_CHANGE',
+  trackAction: 'preact-smitty/TRACK_ACTION',
+  releaseAction: 'react-smitty/RELEASE_ACTION'
 })
 
-let calculateNextState = (userStoreState) => ({ id, instance, mapStateToProps, getProps }) => {
+const calculateNextState = userStoreState => ({
+  instance,
+  mapStateToProps,
+  getProps
+}) => {
   if (typeof mapStateToProps !== 'function') {
     return
   }
 
-  const nextState = mapStateToProps.length === 2
-    ? mapStateToProps(userStoreState, getProps())
-    : mapStateToProps(userStoreState)
+  const nextState = mapStateToProps(userStoreState, getProps())
 
   if (instance.state !== nextState) {
     instance.setState(nextState)
@@ -38,52 +37,158 @@ tree.handleActions({
   },
   [tree.actions.register]: (state, payload) => {
     payload.instance.store = state.userStore
-    state.instances = state.instances.concat(payload)
-    calculateNextState(state.userStore.state)(payload)
+    payload.instance.state = payload.mapStateToProps
+      ? payload.mapStateToProps(state.userStore.state, payload.getProps())
+      : {}
+
+    if (payload.mapStateToProps && payload.mapStateToProps.length === 2) {
+      payload.instance.componentWillReceiveProps = function(nextProps) {
+        if (this.props !== nextProps) {
+          calculateNextState(state.userStore.state)(payload)
+        }
+      }
+    }
+
+    state.connections = state.connections.concat(payload)
   },
   [tree.actions.unregister]: (state, payload) => {
-    const index = state.instances.findIndex(inst => {
-      inst.id === payload
-    })
-    state.instances.splice(index, 1)
+    const index = state.connections.findIndex(inst => inst === payload)
+    state.connections.splice(index, 1)
   },
   [tree.actions.userStoreChange]: (state, userStoreState) => {
     const updater = calculateNextState(userStoreState)
-    state.instances.forEach(updater)
+    state.connections.forEach(updater)
+  },
+  [tree.actions.trackAction]: (state, payload) => {
+    payload.instance.store = state.userStore
+
+    let cb = data => {
+      let props = payload.getProps()
+      if (
+        payload.shouldTrackerUpdate(
+          state.userStore.state,
+          props,
+          payload.type,
+          data
+        )
+      ) {
+        const nextState = {}
+        nextState[payload.key] = payload.tracker(
+          state.userStore.state,
+          payload.getProps(),
+          payload.type,
+          data
+        )
+        payload.instance.setState(() => nextState)
+      }
+    }
+
+    payload.instance.componentWillReceiveProps = function(nextProps) {
+      if (this.props !== nextProps) {
+        cb()
+      }
+    }
+
+    state.userStore.on(payload.type, cb)
+    state.trackers.push({
+      instance: payload.instance,
+      type: payload.type,
+      cb
+    })
+
+    if (
+      payload.shouldTrackerUpdate(
+        state.userStore.state,
+        payload.getProps(),
+        payload.type,
+        undefined
+      )
+    ) {
+      const nextState = {}
+      nextState[payload.key] = payload.tracker(
+        state.userStore.state,
+        payload.getProps(),
+        payload.type,
+        undefined
+      )
+      payload.instance.setState(() => nextState)
+    }
+  },
+  [tree.actions.releaseAction]: (state, payload) => {
+    const index = state.connections.findIndex(inst => inst === payload)
+    const tracker = state.connections[index]
+    state.userStore.off(tracker.type, tracker.cb)
+    state.connections.splice(index, 1)
   }
 })
 
 export class Provider extends Component {
-  constructor (props) {
+  constructor(props) {
     super(props)
     tree.actions.setUserStore(props.store)
     this.props.store.on('$$store:state:change', tree.actions.userStoreChange)
   }
 
-  render (props) {
+  render(props) {
     return props.children[0]
   }
 }
 
-export function connect (mapStateToProps) {
-  return function wrapComponent (WrappedComponent) {
+export function connect(mapStateToProps) {
+  return function wrapComponent(WrappedComponent) {
     return class Connect extends Component {
-      constructor (props) {
+      constructor(props) {
         super(props)
-        this.id = getId()
         tree.actions.register({
-          id: this.id,
           instance: this,
           mapStateToProps,
           getProps: () => this.props
         })
       }
 
-      componentWillUnmount () {
-        tree.actions.unregister(this.id)
+      componentWillUnmount() {
+        tree.actions.unregister(this)
       }
 
-      render (props, state) {
+      render(props, state) {
+        return h(
+          WrappedComponent,
+          Object.assign({}, props, state, {
+            emit: this.store.emit,
+            actions: this.store.actions
+          })
+        )
+      }
+    }
+  }
+}
+
+export function track(
+  type,
+  statePropertyKey,
+  tracker,
+  shouldTrackerUpdate = () => true
+) {
+  return function wrapComponent(WrappedComponent) {
+    return class Track extends Component {
+      constructor(props) {
+        super(props)
+
+        tree.actions.trackAction({
+          instance: this,
+          type: type.toString(),
+          key: statePropertyKey,
+          shouldTrackerUpdate,
+          tracker,
+          getProps: () => this.props
+        })
+      }
+
+      componentWillUnmount() {
+        tree.actions.releaseAction(this)
+      }
+
+      render(props, state) {
         return h(
           WrappedComponent,
           Object.assign({}, props, state, {
